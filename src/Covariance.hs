@@ -84,11 +84,6 @@ updateCovariance
     , len   = len0   + len1
     }
 
--- -> (a*x + b*y + c*z + d*w) -- call this the cross sum
---  + len*m*n                 -- product of means
---  - n*(a + b + c + d)       -- mean ys * sum xs
---  - m*(x + y + z + w)       -- mean xs * sum ys
-
 -- Extract the covariance from the sum.
 getCovariance :: Covariance -> Double
 getCovariance (CovarianceAccumulator _ _ cross sumx sumy len_) = let
