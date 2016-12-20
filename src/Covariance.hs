@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 module Covariance (
-  Covariance,
+  Covariance(..),
   mkCovariance,
   updateCovariance,
   getCovariance,
@@ -63,12 +63,12 @@ module Covariance (
 -- So easy!
 
 data Covariance = CovarianceAccumulator
-  { x     :: !Double
-  , y     :: !Double
-  , cross :: !Double -- cross sum, basically zipWith (*) xs ys
-  , sumx  :: !Double -- sum xs
-  , sumy  :: !Double -- sum ys
-  , len   :: !Int    -- length
+  { x     :: {-#UNPACK#-} !Double
+  , y     :: {-#UNPACK#-} !Double
+  , cross :: {-#UNPACK#-} !Double -- cross sum, basically zipWith (*) xs ys
+  , sumx  :: {-#UNPACK#-} !Double -- sum xs
+  , sumy  :: {-#UNPACK#-} !Double -- sum ys
+  , len   :: {-#UNPACK#-} !Int    -- length
   }
 
 instance Show Covariance where
@@ -101,6 +101,9 @@ updateCovariance
 getCovariance :: Covariance -> Double
 getCovariance (CovarianceAccumulator _ _ cross sumx sumy len_) = let
   len = fromIntegral len_
+  -- Unfortunately this is apparently prone to numerical stability issues. Cf.
+  -- https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Na.C3.AFve_algorithm
+  -- http://math.stackexchange.com/questions/702981/catastrophic-cancellation
   num = cross - sumx*sumy/len
   den = fromIntegral (len_ - 1)
   in num / den
