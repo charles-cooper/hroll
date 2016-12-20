@@ -40,12 +40,25 @@ module Covariance (
 --  - n*(a + b + c + d)       -- mean ys * sum xs
 --  - m*(x + y + z + w)       -- mean xs * sum ys
 --
+-- Noting that mean xs == sum xs / length xs we can further simplify
+-- -> zipWith (*) xs ys
+--  + len * mean xs * mean ys
+--  - mean ys * sum xs
+--  - mean xs * sum ys
+--
+-- -> zipWith (*) xs ys
+--  + sum xs * sum ys / len
+--  - sum ys / len * sum xs
+--  - sum xs / len * sum ys
+--
+-- Terms cancel, giving the simple formula
+-- -> zipWith (*) xs ys - (sum xs * sum ys / len)
+--
 -- So the problem of rolling covariance boils down to calculating
 -- a) rolling cross sum
 -- b) rolling sum of xs
 -- c) rolling sum of ys
--- d) rolling mean of xs
--- e) rolling mean of ys
+-- d) rolling length
 --
 -- So easy!
 
@@ -87,13 +100,8 @@ updateCovariance
 -- Extract the covariance from the sum.
 getCovariance :: Covariance -> Double
 getCovariance (CovarianceAccumulator _ _ cross sumx sumy len_) = let
-  len   = fromIntegral len_
-  meanx = sumx / len
-  meany = sumy / len
-  num = cross
-    + len*meanx*meany
-    - meanx*sumy
-    - meany*sumx
+  len = fromIntegral len_
+  num = cross - sumx*sumy/len
   den = fromIntegral (len_ - 1)
   in num / den
 
