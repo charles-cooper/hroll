@@ -1,5 +1,5 @@
 module Main where
-import Deque as D
+import Queue as Q
 import Covariance
 import Data.Time.Clock
 import Data.IORef
@@ -9,21 +9,21 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.List as L
 import Control.DeepSeq
 import Control.Exception
-import Statistics.Sample
+import Statistics.Sample as S
 
-summer :: Deque Int
-summer = deque (+)
+summer :: Queue Int
+summer = queue (+)
 
-cov :: Deque Covariance
-cov = deque updateCovariance
+cov :: Queue Covariance
+cov = queue updateCovariance
 
-pushTrace :: Show a => a -> IORef (Deque a) -> IO ()
+pushTrace :: Show a => a -> IORef (Queue a) -> IO ()
 pushTrace a xs = do
   modifyIORef xs (push a)
   xs' <- readIORef xs
   print $ runFold xs'
 
-popTrace :: Show a => IORef (Deque a) -> IO ()
+popTrace :: Show a => IORef (Queue a) -> IO ()
 popTrace xs = do
   modifyIORef xs (\xs -> maybe xs snd $ pop xs)
   xs' <- readIORef xs
@@ -39,16 +39,16 @@ windows k xs ys = let
     then Just (U.take k vec, U.drop 1 vec)
     else Nothing
 
-queues :: Int -> U.Vector Double -> U.Vector Double -> [Deque Covariance]
+queues :: Int -> U.Vector Double -> U.Vector Double -> [Queue Covariance]
 queues k xs ys = let
   zs = uncurry mkCovariance <$> U.toList (pair xs ys)
-  pushPop x d = case D.pop (D.push x d) of
+  pushPop x d = case Q.pop (Q.push x d) of
     Nothing -> error "Impossible situation: push resulted in empty queue"
     Just d' -> snd d'
-  go d x = if D.size d == k
+  go d x = if Q.size d == k
     then pushPop x d
     else push x d
-  in dropWhile (\d -> D.size d < k) $ L.scanl' go cov zs
+  in dropWhile (\d -> Q.size d < k) $ L.scanl' go cov zs
 
 time :: String -> IO a -> IO a
 time msg action = do
@@ -58,19 +58,19 @@ time msg action = do
   putStrLn $ msg ++ " took " ++ show (t1 `diffUTCTime` t0)
   return r
 
-covariance' :: Deque Covariance -> Double
+covariance' :: Queue Covariance -> Double
 covariance' = maybe (0/0) getCovariance . runFold
 
 -- simple test suite
 main :: IO ()
 main = do
   -- Find the rolling covariance of two randomly generated, million element vectors
-  xs <- evaluate . force =<< U.fromList <$> replicateM 1000000 randomIO
-  ys <- evaluate . force =<< U.fromList <$> replicateM 1000000 randomIO
-  time "Naive 100"    $ print $ sum $ covariance  <$> windows 100 xs ys
-  time "Window 100"   $ print $ sum $ covariance' <$> queues  100 xs ys
-  time "Naive 1000"   $ print $ sum $ covariance  <$> windows 1000 xs ys
-  time "Window 1000"  $ print $ sum $ covariance' <$> queues  1000 xs ys
-  time "Naive 10000"  $ print $ sum $ covariance  <$> windows 10000 xs ys
-  time "Window 10000" $ print $ sum $ covariance' <$> queues  10000 xs ys
+  xs <- evaluate . force =<< U.fromList <$> replicateM 10000 randomIO
+  ys <- evaluate . force =<< U.fromList <$> replicateM 10000 randomIO
+  time "Naive 10"    $ print $ sum $ covariance  <$> windows 10 xs ys
+  time "Window 10"   $ print $ sum $ covariance' <$> queues  10 xs ys
+  time "Naive 100"   $ print $ sum $ covariance  <$> windows 100 xs ys
+  time "Window 100"  $ print $ sum $ covariance' <$> queues  100 xs ys
+  time "Naive 1000"  $ print $ sum $ covariance  <$> windows 1000 xs ys
+  time "Window 1000" $ print $ sum $ covariance' <$> queues  1000 xs ys
 
