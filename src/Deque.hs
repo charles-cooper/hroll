@@ -4,6 +4,7 @@ module Deque (
   mdeque,
   push,
   pop,
+  popWhile,
   runFold,
   size,
 ) where
@@ -85,6 +86,13 @@ pop (Deque f sz xs [])     = pop (Deque f sz [] (foldl' go [] xs))
   where
     go [] (a, _)          = [(a, a)]
     go ((y, b):ys) (a, _) = (a, f a b) : (y, b) : ys
+
+popWhile :: (a -> Bool) -> Deque a -> Deque a
+popWhile pred d@(Deque f sz _ _) = case pop d of
+  Nothing      -> d
+  Just (a, d') -> if pred a
+    then popWhile pred d'
+    else d
 
 -- Simulate running a foldl1 over the deque. Note that while it is
 -- semantically the same as running a foldl1, performance-wise it is O(1)
