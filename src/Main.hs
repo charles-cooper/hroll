@@ -27,11 +27,11 @@ pushTrace a xs = do
   print $ runFold xs'
 
 data Covariance2 = Cov2
-  { sumx  :: Double
-  , sumy  :: Double
-  , cov0  :: Double -- partial covariance. basically cov xs ys * (len - 1),
+  { sumx  :: {-#UNPACK#-} !Double
+  , sumy  :: {-#UNPACK#-} !Double
+  , cov0  :: {-#UNPACK#-} !Double -- partial covariance. basically cov xs ys * (len - 1),
                     -- i.e. just the sum without denominator
-  , len   :: Int
+  , len   :: {-#UNPACK#-} !Int
   }
 
 mkcov2 :: Double -> Double -> Covariance2
@@ -124,10 +124,10 @@ main = do
   -- Find the rolling covariance of two randomly generated, million element vectors
   xs <- evaluate . force =<< U.fromList <$> replicateM 100000 randomIO
   ys <- evaluate . force =<< U.fromList <$> replicateM 100000 randomIO
-  time "Naive 10"    $ print $ head $ covariance  <$> windows 10 xs ys
-  time "Window 10"   $ print $ head $ covariance' <$> queues  10 xs ys
-  time "Naive 100"   $ print $ head $ covariance  <$> windows 100 xs ys
-  time "Window 100"  $ print $ head $ covariance' <$> queues  100 xs ys
-  time "Naive 1000"  $ print $ head $ covariance  <$> windows 10000 xs ys
-  time "Window 1000" $ print $ head $ covariance' <$> queues  10000 xs ys
+  time "Naive 10"    $ print $ sum $ covariance  <$> windows 10 xs ys
+  time "Window 10"   $ print $ sum $ covariance' <$> queues  10 xs ys
+  time "Naive 100"   $ print $ sum $ covariance  <$> windows 100 xs ys
+  time "Window 100"  $ print $ sum $ covariance' <$> queues  100 xs ys
+  time "Naive 1000"  $ print $ sum $ covariance  <$> windows 1000 xs ys
+  time "Window 1000" $ print $ sum $ covariance' <$> queues  1000 xs ys
 
